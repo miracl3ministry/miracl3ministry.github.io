@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Лаб 1</title>
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx"
+            crossorigin="anonymous"
+    />
+    <style>
+        body {
+            margin: 20px;
+        }
+
+        canvas,
+        #div,
+        #div2 {
+            border: 1px solid black;
+            margin: 10px 0;
+        }
+
+        #div {
+            height: 500px;
+        }
+
+        span {
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+<div class="row">
+    <div class="col-6">
+        <!-- <canvas height="500" width="500" id="canvas">Обновите браузер</canvas> -->
+        <div id="div"></div>
+        <button type="button" class="btn btn-primary" id="clear_btn">Очистить</button>
+        <button type="button" class="btn btn-primary" id="drawVertices_btn">Нарисовать графы</button>
+        <button type="button" class="btn btn-primary" id="test">Решить</button>
+        <button type="button" class="btn btn-primary" id="inputFromAlert">Ввод текстом</button>
+        <div id="div2"></div>
+    </div>
+    <div class="col-6">
+        <div class="row">
+            <p class="out"></p>
+            <div class="col-6">
+                <p class="multipleStructure"></p>
+                <div class="row">
+                    <span class="multipleStructureG col-6"></span>
+                    <span class="multipleStructureG-1 col-6"></span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="row">
+                    <span class="reachableStructure col-6"></span>
+                    <span class="counterreachableStructure col-6"></span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="row">
+                    <span class="stronglyConnectedSubgraph col-12"></span>
+                    <span class="topologicalStr col-6"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12 my-1">
+        <p>
+            Количество вершин
+            <input type="number" name="verticesCount" id="verticesCount" min="0" max="20"/>
+        </p>
+        <div class="accordion" id="accordionExample">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        Заполните матрицу смежности
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
+                     data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                        <div class="d-flex flex-row align-items-center g-5 flex-wrap">
+                            <div class="adjacencyMatrix" id="adjacencyMatrix__inputs"></div>
+                            <span class="adjacencyMatrixOut mx-3" data-description="мб удалить потом"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        Заполните матрицу инцидентности
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
+                     data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                        <div class="adjacencyMatrix" id="incidenceMatrix__inputs"></div>
+                        <span class="incidenceMatrixOut mx-3" data-description="мб удалить потом"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- <textarea name="adjacencyMatrix" id="adjacencyMatrix__textarea" cols="7" rows="1"></textarea> -->
+    </div>
+</div>
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
+        crossorigin="anonymous"
+></script>
+
+<script
+        src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"
+        integrity="sha512-tBzZQxySO5q5lqwLWfu8Q+o4VkTcRGOeQGVQ0ueJga4A1RKuzmAu5HXDOXLEjpbKyV7ow9ympVoa6wZLEzRzDg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+></script>
+<script
+        src="https://cdnjs.cloudflare.com/ajax/libs/graphdracula/1.3.0/dracula.min.js"
+        integrity="sha512-PJ4xeJ2YfC5ybVI5D5M0J2hg/389ejssyl16qhZZh3X0oUdgYPqcYAh6++qncqiyQiqyGf98OynvTkeZyxweeg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+></script>
+<script>
+    /*
+    * Реализация лабораторной №1
+    * Осторожно дальше идет много говнокода
+    * */
+    "use strict";
+
+    function Interface() {
+        this.verticesCount = 0;
+        this.edges = [];
+        this.adjacencyMatrix = [];
+        this.incidenceMatrix = [];
+
+        this.Graph = Dracula.Graph;
+        this.Renderer = Dracula.Renderer.Raphael;
+        this.Layout = Dracula.Layout.Spring;
+        this.g = new this.Graph();
+
+        this.start = () => {
+            this.g.addEdge("1", "2");
+            this.g.addEdge("1", "3");
+            this.g.addEdge("3", "4");
+            this.g.addEdge("3", "5");
+            this.g.addEdge("4", "2");
+            this.g.addEdge("5", "1");
+            this.g.addEdge("5", "2");
+
+            let render = (r, n) => {
+                // let label = r.text(0, 30, n.label).attr({ opacity: 0 });
+                let set = r
+                    .set()
+                    .push(r.rect(n.point[0] - 30, n.point[1] - 13, 62, 86).attr({
+                        fill: "#fa8",
+                        "stroke-width": 2,
+                        r: "9px"
+                    }))
+                    .push(r.text(n.point[0], n.point[1] + 30, n.label).attr({"font-size": "20px"}));
+                console.log("set:", set);
+                return set;
+            };
+
+            this.layouter = new this.Layout(this.g);
+            this.layouter.layout();
+
+            let width = document.getElementById("div").clientWidth;
+            let height = 500;
+
+            this.renderer = new this.Renderer("#div", this.g, width, height);
+            this.renderer.draw();
+        };
+
+        this.checkUpAndStart = () => {
+            if (this.incidenceMatrix.length !== 0) {
+                this.verticesCount = this.incidenceMatrix.length;
+                this.drawAdjacencyMatrix();
+                this.drawIncidenceMatrix();
+            } else {
+                this.drawAdjacencyMatrix();
+            }
+        };
+
+        this.addButtonListeners = () => {
+            // инпут с количеством вершин и создание инпутов для матрицы
+            document.getElementById("verticesCount").addEventListener("change", (e) => {
+                let count = e.target.valueAsNumber;
+                this.verticesCount = count;
+                if (count > 0 && count <= 20) {
+                    // создаем пустой двумерный массив для матрицы смежностей
+                    this.adjacencyMatrix = [];
+                    for (let i = 0; i < count; i++) {
+                        let row = [];
+                        for (let j = 0; j < count; j++) {
+                            row.push(0);
+                        }
+                        this.adjacencyMatrix.push(row);
+                    }
+                    // создаем форму ввода матрицы
+                    e.target.style.outline = "none";
+                    this.createInputsForAdjacencyMatrix(count);
+                } else {
+                    e.target.style.outline = "1px solid red";
+                }
+            });
+            // clear button
+            document.getElementById("clear_btn").addEventListener("click", this.clear);
+            // draw vertices button
+            document.getElementById("drawVertices_btn").addEventListener("click", this.checkUpAndStart);
+            // for tests
+            document.getElementById("test").addEventListener("click", this.test);
+            document.getElementById("inputFromAlert").addEventListener("click", this.inputFromAlert);
+        };
+
+        this.draw = () => {
+            // рисует графы
+            let render = (r, n) => {
+                // let label = r.text(0, 30, n.label).attr({ opacity: 0 });
+                let set = r
+                    .set()
+                    .push(r.rect(n.point[0] - 30, n.point[1] - 13, 62, 86).attr({
+                        fill: "#fa8",
+                        "stroke-width": 2,
+                        r: "9px"
+                    }))
+                    .push(r.text(n.point[0], n.point[1] + 30, n.label).attr({"font-size": "20px"}));
+                console.log("set:", set);
+                return set;
+            };
+
+            this.layouter = new this.Layout(this.g);
+            this.layouter.layout();
+
+            let width = document.getElementById("div").clientWidth;
+            let height = 500;
+
+            this.renderer = new this.Renderer(document.getElementById("div"), this.g, width, height);
+            this.renderer.draw();
+        };
+
+        this.draw2 = () => {
+            this.Graph2 = Dracula.Graph;
+            this.Renderer2 = Dracula.Renderer.Raphael;
+            this.Layout2 = Dracula.Layout.Spring;
+            // this.g2 = new this.Graph();
+
+            document.getElementById("div2").innerText = "";
+            this.g2 = new this.Graph();
+
+            // рисует графы
+            let render = (r, n) => {
+                // let label = r.text(0, 30, n.label).attr({ opacity: 0 });
+                let set = r
+                    .set()
+                    .push(r.rect(n.point[0] - 30, n.point[1] - 13, 62, 16).attr({
+                        fill: "#fa8",
+                        "stroke-width": 2,
+                        r: "0px"
+                    }))
+                    .push(r.text(n.point[0], n.point[1] + 30, n.label).attr({"font-size": "20px"}));
+                console.log("set:", set);
+                return set;
+            };
+
+            let arr1 = [],
+                arr2 = [];
+            for (const key in solver.stronglyConnectedSubgraphObj) {
+                if (Object.hasOwnProperty.call(solver.stronglyConnectedSubgraphObj, key)) {
+                    const element = solver.stronglyConnectedSubgraphObj[key];
+                    element.input.forEach((e) => {
+                        arr1.push(e);
+                        arr2.push(element.name);
+                    });
+                    element.output.forEach((e) => {
+                        arr1.push(element.name);
+                        arr2.push(e);
+                    });
+                    // topologicalStr += `${element.name}: input: ${element.input}, output: ${element.output} \n`;
+                }
+            }
+            if (arr1.length !== arr2.length) throw new Error("idk");
+            let style = {};
+            style["directed"] = true;
+            style["font-size"] = "16px";
+            for (let i = 0; i < arr1.length; i++) {
+                this.g2.addEdge(arr1[i], arr2[i], {style: style});
+            }
+
+            this.layouter2 = new this.Layout(this.g2);
+            this.layouter2.layout();
+
+            let width = document.getElementById("div2").clientWidth;
+            let height = 500;
+
+            this.renderer2 = new this.Renderer(document.getElementById("div2"), this.g2, width, height);
+            this.renderer2.draw();
+        };
+
+        this.clear = () => {
+            // очищает графы
+            document.getElementById("div").innerText = "";
+            this.g = new this.Graph();
+        };
+
+        this.test = () => {
+            // console.log("test");
+            // this.drawIncidenceMatrix();
+            this.output();
+        };
+
+        this.updateAdjacencyMatrix = (e) => {
+            // обновляет матрицу смежностей
+            if (e.target.valueAsNumber > 0) e.target.valueAsNumber = 1;
+            else e.target.valueAsNumber = 0;
+            this.adjacencyMatrix[e.target.dataset.i][e.target.dataset.j] = e.target.valueAsNumber;
+
+            let str = this.arrayToString(this.adjacencyMatrix);
+            document.querySelector(".adjacencyMatrixOut").innerText = str;
+
+            this.checkUpAndStart();
+            this.createInputsForIncidenceMatrix();
+        };
+
+        this.updateIncidenceMatrix = (e) => {
+            // обновляет матрицу инцидентности
+            let elChangeValue = document.querySelectorAll(`.incidenceMatrix__input[data-j="${e.target.dataset.j}"]`);
+            if (elChangeValue.length !== 2) throw new Error(".incidenceMatrix__input error");
+            if (elChangeValue[0] == e.target) {
+                if (e.target.valueAsNumber > 0) e.target.valueAsNumber = 1;
+                else e.target.valueAsNumber = -1;
+                let num = e.target.valueAsNumber;
+                elChangeValue[1].valueAsNumber = num * -1;
+                this.incidenceMatrix[e.target.dataset.i][e.target.dataset.j] = num;
+                this.incidenceMatrix[elChangeValue[1].dataset.i][elChangeValue[1].dataset.j] = num * -1;
+            } else {
+                if (e.target.valueAsNumber > 0) e.target.valueAsNumber = 1;
+                else e.target.valueAsNumber = -1;
+                let num = e.target.valueAsNumber;
+                elChangeValue[0].valueAsNumber = num * -1;
+                this.incidenceMatrix[e.target.dataset.i][e.target.dataset.j] = num;
+                this.incidenceMatrix[elChangeValue[0].dataset.i][elChangeValue[0].dataset.j] = 1 * -1;
+            }
+
+            let str = this.arrayToString(this.incidenceMatrix);
+            document.querySelector(".incidenceMatrixOut").innerText = str;
+            this.drawIncidenceMatrix();
+        };
+
+        this.drawAdjacencyMatrix = () => {
+            // рисует графы из матрицы смежностей
+            this.edges = [];
+            let adjacencyMatrix = this.adjacencyMatrix;
+            if (adjacencyMatrix) {
+                this.clear();
+                // цикл по adjacencyMatrix
+                for (let i = 0; i < adjacencyMatrix.length; i++) {
+                    let edges = [];
+                    for (let j = 0; j < adjacencyMatrix[i].length; j++) {
+                        if (adjacencyMatrix[i][j]) {
+                            this.edges.push({from: i, to: j});
+                            edges.push(j);
+                        }
+                    }
+                    // отрисовка граней и вершин
+                    if (edges.length === 0) {
+                        this.g.addNode((i + 1).toString());
+                    } else {
+                        edges.forEach((e) => {
+                            this.g.addEdge((i + 1).toString(), (e + 1).toString());
+                        });
+                    }
+                }
+                this.draw();
+            } else console.error("adjacency matrix: ", adjacencyMatrix);
+        };
+
+        this.drawIncidenceMatrix = () => {
+            // проверка направления грава по матрице инцидентности
+            let incidenceMatrix = this.incidenceMatrix;
+            if (incidenceMatrix.length !== 0) {
+                for (let i = 0; i < this.edges.length; i++) {
+                    const element = this.edges[i];
+                    if (incidenceMatrix[element.from][i] === -1) {
+                        let tmp = element.from;
+                        element.from = element.to;
+                        element.to = tmp;
+                    }
+                }
+            } else console.error("incidence matrix: ", incidenceMatrix);
+
+            // рисует графы из this.edges
+            this.clear();
+            let style = {};
+            style["directed"] = true;
+            style["font-size"] = "20px";
+            style["fill-opacity"] = "1";
+            // style["label-style"] = "background-color: #000";
+            for (let i = 0; i < this.edges.length; i++) {
+                let style = {};
+                style["directed"] = true;
+                style["font-size"] = "20px";
+                style["fill-opacity"] = "1";
+                style["label"] = (i + 1).toString();
+                this.g.addEdge((this.edges[i].from + 1).toString(), (this.edges[i].to + 1).toString(), {
+                    // directed: true,
+                    style: style, // баг с пропадающими стрелками после добавления стиля
+                });
+            }
+            this.draw();
+        };
+
+        this.createInputsForAdjacencyMatrix = (count) => {
+            // добавляем инпуты для матрицы смежностей
+            let table = document.createElement("table");
+            let tableHeader = document.createElement("tr");
+            let th = document.createElement("th");
+            th.innerText = "i\\j";
+            tableHeader.append(th);
+            table.append(tableHeader);
+            for (let i = 0; i < count; i++) {
+                let tr = document.createElement("tr");
+                let Ith = document.createElement("th");
+                let Jth = document.createElement("th");
+                Ith.innerText = i + 1;
+                Jth.innerText = i + 1;
+                tableHeader.append(Jth);
+                tr.append(Ith);
+                for (let j = 0; j < count; j++) {
+                    let td = document.createElement("td");
+                    let input = document.createElement("input");
+                    input.classList.add("adjacencyMatrix__input");
+                    input.type = "number";
+                    input.min = 0;
+                    input.max = 1;
+                    input.value = 0;
+                    input.dataset.i = i;
+                    input.dataset.j = j;
+                    input.addEventListener("change", this.updateAdjacencyMatrix);
+                    td.append(input);
+                    tr.append(td);
+                }
+                table.append(tr);
+            }
+            document.getElementById("adjacencyMatrix__inputs").innerText = "";
+            document.getElementById("adjacencyMatrix__inputs").append(table);
+        };
+
+        this.createInputsForIncidenceMatrix = () => {
+            // создаем массив со всеми гранями
+            let edges = [],
+                edgesStringArr = [];
+            let adjacencyMatrix = this.adjacencyMatrix;
+            // if (adjacencyMatrix) {
+            //   for (let i = 0; i < adjacencyMatrix.length; i++) {
+            //     for (let j = 0; j < adjacencyMatrix[i].length; j++) {
+            //       if (i === j) continue;
+            //       else if (adjacencyMatrix[i][j]) {
+            //         if (edgesStringArr.includes([j, i].toString())) continue;
+            //         edges.push([i, j]);
+            //         edgesStringArr.push([i, j].toString());
+            //       }
+            //     }
+            //   }
+            // }
+            this.edges.forEach((e) => {
+                edges.push([e.from, e.to]);
+                edgesStringArr.push([e.from, e.to].toString());
+            });
+            // добавляем инпуты для матрицы инцидентности и заполняем их
+            let table = document.createElement("table");
+            let tableHeader = document.createElement("tr");
+            let th = document.createElement("th");
+            this.incidenceMatrix = [];
+            th.innerText = "i\\j";
+            tableHeader.append(th);
+            table.append(tableHeader);
+            for (let j = 0; j < edges.length; j++) {
+                let Jth = document.createElement("th");
+                Jth.innerText = j + 1;
+                tableHeader.append(Jth);
+            }
+            for (let i = 0; i < this.verticesCount; i++) {
+                let tr = document.createElement("tr");
+                let Ith = document.createElement("th");
+                Ith.innerText = i + 1;
+                tr.append(Ith);
+                let incidenceMatrixRow = [];
+                for (let j = 0; j < edges.length; j++) {
+                    let td = document.createElement("td");
+                    let input = document.createElement("input");
+                    if (edges[j][0] == i) {
+                        input.classList.add("incidenceMatrix__input");
+                        input.type = "number";
+                        input.min = -1;
+                        input.max = 1;
+                        input.step = 2;
+                        input.value = 1;
+                        input.dataset.i = i;
+                        input.dataset.j = j;
+                        incidenceMatrixRow.push(1);
+                    } else if (edges[j][1] == i) {
+                        input.classList.add("incidenceMatrix__input");
+                        input.type = "number";
+                        input.min = -1;
+                        input.max = 1;
+                        input.step = 2;
+                        input.value = -1;
+                        input.dataset.i = i;
+                        input.dataset.j = j;
+                        incidenceMatrixRow.push(-1);
+                    } else {
+                        input.type = "number";
+                        input.min = -1;
+                        input.max = 1;
+                        input.value = 0;
+                        input.disabled = true;
+                        incidenceMatrixRow.push(0);
+                    }
+                    input.addEventListener("change", this.updateIncidenceMatrix);
+                    td.append(input);
+                    tr.append(td);
+                }
+                this.incidenceMatrix.push(incidenceMatrixRow);
+                table.append(tr);
+            }
+            document.getElementById("incidenceMatrix__inputs").innerText = "";
+            document.getElementById("incidenceMatrix__inputs").append(table);
+        };
+
+        this.inputFromAlert = () => {
+            let a = prompt("Введите матрицу в формате [...]\n[...]\n[...]");
+            let arr = [];
+            this.incidenceMatrix = [];
+            this.adjacencyMatrix = [];
+            this.edges = [];
+
+            a = a.replace(/[\n ]/gi, "").replace(/[\r]/gi, ";").split(";");
+            if (!Array.isArray(a)) throw new Error("input not array");
+            else {
+                a.forEach((e) => {
+                    let b = e.split(",");
+                    for (let i = 0; i < b.length; i++) {
+                        b[i] = Number(b[i].replace(/[^0-9]/gi, ""));
+                    }
+                    arr.push(b);
+                });
+            }
+            this.adjacencyMatrix = arr;
+            this.checkUpAndStartFromInput();
+        };
+
+        this.checkUpAndStartFromInput = () => {
+            if (this.adjacencyMatrix.length !== 0) {
+                this.verticesCount = this.adjacencyMatrix.length;
+                document.getElementById("verticesCount").valueAsNumber = this.verticesCount;
+                this.clear();
+                this.updateAdjacencyMatrixFromInput();
+                this.createIncidenceMatrix();
+                this.createInputsForIncidenceMatrix();
+                // this.draw();
+
+                // this.drawAdjacencyMatrix();
+                this.drawIncidenceMatrix();
+                // this.checkUpAndStart();
+            }
+        };
+
+        this.updateAdjacencyMatrixFromInput = () => {
+            // обновляет матрицу смежностей после текстового ввода
+            this.createInputsForAdjacencyMatrix(this.adjacencyMatrix.length);
+            let inputs = document.getElementById("adjacencyMatrix__inputs");
+            let len = this.verticesCount;
+            for (let i = 0; i < len; i++) {
+                for (let j = 0; j < len; j++) {
+                    inputs.querySelector(`[data-i="${i}"][data-j="${j}"]`).valueAsNumber = this.adjacencyMatrix[i][j];
+                }
+            }
+
+            let str = this.arrayToString(this.adjacencyMatrix);
+            document.querySelector(".adjacencyMatrixOut").innerText = str;
+
+            // this.checkUpAndStart();
+            // this.createInputsForIncidenceMatrix();
+        };
+
+        this.createIncidenceMatrix = () => {
+            // создает массив матрицы инцеденций
+            let adjacencyMatrix = this.adjacencyMatrix;
+            for (let i = 0; i < adjacencyMatrix.length; i++) {
+                for (let j = 0; j < adjacencyMatrix[i].length; j++) {
+                    if (adjacencyMatrix[i][j]) {
+                        this.edges.push({from: i, to: j});
+                    }
+                }
+            }
+            edges = [];
+            edgesStringArr = [];
+
+            this.edges.forEach((e) => {
+                edges.push([e.from, e.to]);
+                edgesStringArr.push([e.from, e.to].toString());
+            });
+            this.incidenceMatrix = [];
+            for (let i = 0; i < this.verticesCount; i++) {
+                let incidenceMatrixRow = [];
+                for (let j = 0; j < edges.length; j++) {
+                    if (edges[j][0] === i) {
+                        incidenceMatrixRow.push(1);
+                    } else if (edges[j][1] === i) {
+                        incidenceMatrixRow.push(-1);
+                    } else {
+                        incidenceMatrixRow.push(0);
+                    }
+                }
+                this.incidenceMatrix.push(incidenceMatrixRow);
+            }
+        };
+
+        this.output = () => {
+            if (this.adjacencyMatrix.length > 2) {
+                solver.input(this.adjacencyMatrix, this.incidenceMatrix);
+                // вывод матрицы инцидентности
+                let str = this.arrayToString(this.incidenceMatrix);
+                document.querySelector(".incidenceMatrixOut").innerText = str;
+
+                let p = document.querySelector(".out");
+                let text = "";
+                text += " \n";
+                // вывод множественного представления
+                let multipleStructureStr = "";
+                document.querySelector(".multipleStructure").innerText = "Множественное представление";
+                for (let i = 0; i < solver.multipleStructure.rightIncidences.length; i++) {
+                    let element = solver.multipleStructure.rightIncidences[i];
+                    if (element.length === 0) element = [-1];
+                    multipleStructureStr += `G(${i + 1}) = ${element.map((e) => e + 1)} \n`;
+                }
+                document.querySelector(".multipleStructureG").innerText = multipleStructureStr;
+                multipleStructureStr = "";
+                for (let i = 0; i < solver.multipleStructure.leftIncidences.length; i++) {
+                    let element = solver.multipleStructure.leftIncidences[i];
+                    if (element.length === 0) element = [-1];
+                    multipleStructureStr += `G(${i + 1}) = ${element.map((e) => e + 1)} \n`;
+                }
+                document.querySelector(".multipleStructureG-1").innerText = multipleStructureStr;
+
+                // вывод достижимого и контрдостижимого множества
+                let reachableSetStr = "Достижимое множество \n";
+                for (let i = 0; i < solver.reachableMatrix.length; i++) {
+                    let element = solver.reachableMatrix[i];
+                    let strR = `R(${i + 1}) = `; // R(j)
+                    for (let j = 0; j < element.length; j++) {
+                        if (element[j] === 1) strR += `${j + 1},`;
+                    }
+                    strR = strR.slice(0, -1);
+                    strR += "\n";
+                    reachableSetStr += strR;
+                }
+                let counterreachableSet = "Контрдостижимое множество \n";
+                for (let i = 0; i < solver.counterreachableMatrix.length; i++) {
+                    let element = solver.counterreachableMatrix[i];
+                    let strQ = `Q(${i + 1}) = `; // Q(j)
+                    for (let j = 0; j < element.length; j++) {
+                        if (element[j] === 1) strQ += `${j + 1},`;
+                    }
+                    strQ = strQ.slice(0, -1);
+                    strQ += "\n";
+                    counterreachableSet += strQ;
+                }
+                document.querySelector(".reachableStructure").innerText = reachableSetStr;
+                document.querySelector(".counterreachableStructure").innerText = counterreachableSet;
+
+                // вывод сильно связанного подграфа
+                let stronglyConnectedSubgraphStr = "Сильно связанный подграф \n";
+                let arrDeleted = [];
+                for (let i = 0; i < solver.stronglyConnectedSubgraph.length; i++) {
+                    let element = solver.stronglyConnectedSubgraph[i];
+                    let strR = `R(${i + 1}) = `; // R(j)
+                    for (let j = 0; j < solver.reachableMatrix[i].length; j++) {
+                        if (solver.reachableMatrix[i][j] === 1 && !arrDeleted.includes(j)) strR += `${j + 1},`;
+                    }
+                    strR = strR.slice(0, -1);
+                    let strQ = `Q(${i + 1}) = `; // Q(j)
+                    for (let j = 0; j < solver.counterreachableMatrix[i].length; j++) {
+                        if (solver.counterreachableMatrix[i][j] === 1 && !arrDeleted.includes(j)) strQ += `${j + 1},`;
+                    }
+                    strQ = strQ.slice(0, -1);
+                    stronglyConnectedSubgraphStr += `${i + 1} шаг: i = ${solver.stronglyConnectedSubgraphVertex[i]}; ${strR}; \t\t ${strQ}; \t V(${i}) = ${element.map((e) => e + 1)} \n`;
+                    arrDeleted = arrDeleted.concat(element);
+                }
+                document.querySelector(".stronglyConnectedSubgraph").innerText = stronglyConnectedSubgraphStr;
+
+                // вывод топологической декомпозиции
+                let topologicalStr = "Топологическая декомпозиция \n";
+                for (const key in solver.stronglyConnectedSubgraphObj) {
+                    if (Object.hasOwnProperty.call(solver.stronglyConnectedSubgraphObj, key)) {
+                        const element = solver.stronglyConnectedSubgraphObj[key];
+                        topologicalStr += `${element.name}: input: ${element.input}, output: ${element.output} \n`;
+                    }
+                }
+                document.querySelector(".topologicalStr").innerText = topologicalStr;
+                this.draw2();
+            }
+        };
+
+        this.arrayToString = (arr) => {
+            let str = "";
+            for (let i = 0; i < arr.length; i++) {
+                str += "[" + arr[i].toString() + "]" + "\n";
+            }
+            return str;
+        };
+    }
+
+    function Solver(adjacencyMatrix, incidenceMatrix) {
+        this.graph = {};
+        this.adjacencyMatrix; // матрица смежностей
+        this.incidenceMatrix; // матрица инцидентности
+        this.multipleStructure;
+        this.reachableSet; // достижимое множество
+        this.counterreachableSet; // контрдостижимое множество
+        this.stronglyConnectedSubgraph = []; // сильно связанный подграф
+        this.reachableMatrix; // матрица достижимости
+        this.counterreachableMatrix; // матрица контрдостижимости
+
+        this.input = (adjacencyMatrix, incidenceMatrix) => {
+            this.adjacencyMatrix = adjacencyMatrix;
+            this.incidenceMatrix = incidenceMatrix;
+            this.MultipleStructureDefinition();
+            this.reachableSetDefinition();
+            this.MultipleStructureDefinitionWithNSteps(); // не работает
+            this.GetReachableAndCounterreachableMatrix();
+
+            this.findStronglyConnectedSubgraph();
+            this.topologicalDecomposition();
+        };
+
+        this.MultipleStructureDefinition = () => {
+            // расчет множественного представления
+            let rightIncidences = []; // множество правых инциденций G(i)
+            let leftIncidences = []; // множество левых инциденций G-1(i)
+            // G(i)
+            for (let i = 0; i < this.adjacencyMatrix.length; i++) {
+                let arr = [];
+                for (let j = 0; j < this.adjacencyMatrix.length; j++) {
+                    if (this.adjacencyMatrix[i][j] === 1) arr.push(j);
+                }
+                // if (arr.length === 0) arr.push(0);
+                rightIncidences.push(arr);
+            }
+            // G-1(i)
+            for (let j = 0; j < this.adjacencyMatrix.length; j++) {
+                let arr = [];
+                for (let i = 0; i < this.adjacencyMatrix.length; i++) {
+                    if (this.adjacencyMatrix[i][j] === 1) arr.push(i);
+                }
+                // if (arr.length === 0) arr.push(0);
+                leftIncidences.push(arr);
+            }
+            this.multipleStructure = {rightIncidences: rightIncidences, leftIncidences: leftIncidences};
+        };
+
+        this.reachableSetDefinition = () => {
+            // расчет достижимого множества
+            let reachableSet = []; // достижимое множество
+            let counterreachableSet = []; // контрдостижимое множество
+            // R(i)
+            for (let i = 0; i < this.multipleStructure.leftIncidences.length; i++) {
+                let arr = [i];
+                for (let j = i; j < this.multipleStructure.leftIncidences.length; j++) {
+                    arr = this.arrayDisjunction(arr, this.multipleStructure.leftIncidences[j]);
+                }
+                reachableSet[i] = arr;
+            }
+            // Q(i)
+            for (let i = 0; i < this.multipleStructure.rightIncidences.length; i++) {
+                let arr = [i];
+                for (let j = i; j < this.multipleStructure.leftIncidences.length; j++) {
+                    arr = this.arrayDisjunction(arr, this.multipleStructure.rightIncidences[j]);
+                }
+                counterreachableSet[i] = arr;
+            }
+            this.reachableAndCounterreachableSets = {
+                reachableSet: reachableSet,
+                counterreachableSet: counterreachableSet
+            };
+        };
+
+        this.MultipleStructureDefinitionWithNSteps = () => {
+            // расчет множественного представления с помощью путей длинной N, не работает чет
+            let rightIncidencesN = []; // множество правых инциденций G^n(i)
+            let leftIncidencesN = []; // множество левых инциденций G^-n(i)
+            this.multipleStructureN = {
+                rightIncidencesN: [this.multipleStructure.rightIncidences],
+                leftIncidencesN: [this.multipleStructure.leftIncidences]
+            };
+
+            // G^n(i)
+            for (let n = 1; n < this.adjacencyMatrix.length; n++) {
+                let arr = [];
+                for (let i = 0; i < this.multipleStructure.rightIncidences.length; i++) {
+                    let element = this.multipleStructureN.rightIncidencesN[0][i];
+                    let arr2 = [];
+                    element.forEach((e) => {
+                        arr2 = this.arrayDisjunction(arr2, this.multipleStructureN.rightIncidencesN[0][e]);
+                    });
+                    // console.log(arr2, "\t", element);
+                    arr.push(this.arrayDisjunction(arr2, element));
+                }
+                if (this.equals(this.multipleStructureN.rightIncidencesN[n - 1], arr)) {
+                    // Если предыдущий массив такой же как и текущий, значит все пути пройдены
+                    n = this.adjacencyMatrix.length;
+                    continue;
+                }
+                this.multipleStructureN.rightIncidencesN.push(arr);
+            }
+
+            // G^-n(i)
+            for (let n = 1; n < this.adjacencyMatrix.length; n++) {
+                let arr = [];
+                for (let i = 0; i < this.multipleStructure.leftIncidences.length; i++) {
+                    let element = this.multipleStructureN.leftIncidencesN[n - 1][i];
+                    let arr2 = [];
+                    element.forEach((e) => {
+                        arr2 = this.arrayDisjunction(arr2, this.multipleStructureN.leftIncidencesN[0][e]);
+                    });
+                    arr.push(this.arrayDisjunction(arr2, element));
+                }
+                if (this.equals(this.multipleStructureN.leftIncidencesN[n - 1], arr)) {
+                    // Если предыдущий массив такой же как и текущий, значит все пути пройдены
+                    n = this.adjacencyMatrix.length;
+                    continue;
+                }
+                this.multipleStructureN.leftIncidencesN.push(arr);
+                /*
+                  leftIncidencesN: [
+                    0: [[]   [0,3]     [0,1]    [2]     [3]],
+                    1: [[]   [0,2,3]   [0,1,3]  [0,1,2] [2,3]],
+                    2: [[]   [0,2,3]   [0,1,3]  [0,1,2] [0,1,2,3]]
+                    3: [[]   [0,2,3]   [0,1,3]  [0,1,2] [0,1,2,3]]
+                    4: [[]   [0,2,3]   [0,1,3]  [0,1,2] [0,1,2,3]]
+                    5: [[]   [0,2,3]   [0,1,3]  [0,1,2] [0,1,2,3]]
+                  ]
+                  */
+            }
+            // console.log("MultipleStructureDefinitionWithNSteps", this.multipleStructureN);
+        };
+
+        this.GetReachableAndCounterreachableMatrix = () => {
+            // Находит матрицу достижимости и контрдостижимости
+            this.reachableMatrix = [];
+            this.counterreachableMatrix = [];
+            let tmp = [];
+            let arrCanReach = [];
+            // Создание матриц
+            for (let n = 0; n < this.adjacencyMatrix.length; n++) {
+                this.reachableMatrix.push([]);
+                this.counterreachableMatrix.push([]);
+                arrCanReach.push([]);
+                for (let j = 0; j < this.adjacencyMatrix.length; j++) {
+                    if (this.adjacencyMatrix[n][j] === 1) {
+                        this.reachableMatrix[n][j] = 1;
+                        arrCanReach[n].push(j);
+                    } else this.reachableMatrix[n][j] = 0;
+                    if (n === j) {
+                        arrCanReach[n].push(j);
+                        this.reachableMatrix[n][j] = 1;
+                    }
+                }
+            }
+            // цикл, заполняющий матрицу достижимых вершин из определенной вершины n
+            for (let n = 0; n < this.adjacencyMatrix.length; n++) {
+                for (let j = 0; j < this.adjacencyMatrix.length; j++) {
+                    if (arrCanReach[n].includes(j)) {
+                        arrCanReach[n] = this.arrayDisjunction(arrCanReach[n], arrCanReach[j]);
+                    }
+                }
+            }
+            // console.log(arrCanReach);
+            // переводит матрицу достижимых вершин в матрицу достижимости
+            for (let i = 0; i < arrCanReach.length; i++) {
+                arrCanReach[i].forEach((vertex) => {
+                    this.reachableMatrix[i][vertex] = 1;
+                });
+            }
+            // транспонирование матрицы достижимости для получения матрицы контрдостижимости
+            for (let i = 0; i < this.reachableMatrix.length; i++) {
+                for (let j = 0; j < this.reachableMatrix.length; j++) {
+                    this.counterreachableMatrix[j][i] = this.reachableMatrix[i][j];
+                }
+            }
+        };
+
+        this.findStronglyConnectedSubgraph = () => {
+            // сильно связанный подграф
+            this.stronglyConnectedSubgraphVertex = [];
+            this.stronglyConnectedSubgraph = [];
+            let Ri = [];
+            let Qi = [];
+            for (let i = 0; i < solver.reachableMatrix.length; i++) {
+                Ri[i] = []; // R(j)
+                Qi[i] = []; // Q(j)
+                for (let j = 0; j < solver.reachableMatrix[i].length; j++) {
+                    if (solver.reachableMatrix[i][j] === 1) Ri[i].push(j);
+                    if (solver.counterreachableMatrix[i][j] === 1) Qi[i].push(j);
+                }
+            }
+            for (let i = 0; i < Ri.length; i++) {
+                if (Ri[i] && Qi[i]) {
+                    let Vi = this.arrayConjunction(Ri[i], Qi[i]);
+                    Vi.forEach((e) => {
+                        delete Ri[e];
+                        delete Qi[e];
+                    });
+                    this.stronglyConnectedSubgraphVertex.push(i + 1);
+                    this.stronglyConnectedSubgraph.push(Vi);
+                }
+            }
+            // console.log("stronglyConnectedSubgraph", this.stronglyConnectedSubgraph);
+            // console.log("stronglyConnectedSubgraphVertex", this.stronglyConnectedSubgraphVertex);
+        };
+
+        this.topologicalDecomposition = () => {
+            // топологическая декомпозиция
+            this.stronglyConnectedSubgraphObj = {};
+            let stronglyConnectedSubgraph = this.stronglyConnectedSubgraph;
+            for (let i = 0; i < stronglyConnectedSubgraph.length; i++) {
+                this.stronglyConnectedSubgraphObj[this.stronglyConnectedSubgraphVertex[i]] = {name: `V${i + 1}`, i: i};
+                this.stronglyConnectedSubgraphObj[this.stronglyConnectedSubgraphVertex[i]].subgraph = stronglyConnectedSubgraph[i];
+                // сборка входящих ребер из подграфа
+                let inp = [];
+                stronglyConnectedSubgraph[i].forEach((e) => {
+                    inp = this.arrayDisjunction(inp, this.multipleStructure.leftIncidences[e]);
+                });
+                inp = this.arrayComplement(stronglyConnectedSubgraph[i], inp);
+                this.stronglyConnectedSubgraphObj[this.stronglyConnectedSubgraphVertex[i]].inp = inp;
+                // сборка выходящих ребер из подграфа
+                let out = [];
+                stronglyConnectedSubgraph[i].forEach((e) => {
+                    out = this.arrayDisjunction(out, this.multipleStructure.rightIncidences[e]);
+                });
+                out = this.arrayComplement(stronglyConnectedSubgraph[i], out);
+                this.stronglyConnectedSubgraphObj[this.stronglyConnectedSubgraphVertex[i]].out = out;
+            }
+
+            for (const key in this.stronglyConnectedSubgraphObj) {
+                if (Object.hasOwnProperty.call(this.stronglyConnectedSubgraphObj, key)) {
+                    const element = this.stronglyConnectedSubgraphObj[key];
+                    element.input = [];
+                    element.output = [];
+
+                    for (const key2 in this.stronglyConnectedSubgraphObj) {
+                        if (Object.hasOwnProperty.call(this.stronglyConnectedSubgraphObj, key2)) {
+                            const element2 = this.stronglyConnectedSubgraphObj[key2];
+                            if (element == element2) continue;
+                            let arr = this.arrayConjunction(element.out, element2.subgraph);
+                            if (arr.length > 0) {
+                                element.output.push(element2.name);
+                            }
+                            let arr2 = this.arrayConjunction(element.inp, element2.out);
+                            if (arr2.length > 0) {
+                                element.input.push(element2.name);
+                            }
+                        }
+                    }
+                    // let isStart = this.arrayConjunction(element.inp, element.subgraph);
+                    // console.log(element, isStart);
+                }
+            }
+        };
+
+        this.arrayConjunction = (arr1, arr2) => {
+            // логическое И для массивов
+            let newArr = [];
+            arr1.forEach((el) => {
+                if (arr2.includes(el)) newArr.push(el);
+            });
+            return newArr.sort();
+            // arr1.filter(x => arr2.includes(x));
+        };
+
+        this.arrayDisjunction = (arr1, arr2) => {
+            // логическое ИЛИ для массивов
+            let newArr = arr1.concat(arr2);
+            newArr.sort();
+            if (newArr.length < 2) return newArr;
+            for (let i = 1; i < newArr.length; i++) {
+                if (newArr[i - 1] === newArr[i]) newArr.splice(i, 1);
+            }
+            return newArr;
+            // [...arr1, ...arr2]
+        };
+
+        this.arrayComplement = (arr1, arr2) => {
+            // разность множеств (массивов)
+            let newArr = arr1.filter((x) => !arr2.includes(x)).concat(arr2.filter((x) => !arr1.includes(x)));
+            return newArr.sort();
+        };
+
+        this.equals = (a, b) => JSON.stringify(a) === JSON.stringify(b); // сравнение массивов и объектов
+    }
+
+    let adjacencyMatrix = [
+        [0, 1, 1, 0, 0],
+        [0, 0, 1, 0, 0],
+        [0, 0, 0, 1, 0],
+        [0, 1, 0, 0, 1],
+        [0, 0, 0, 0, 0],
+    ];
+    let incidenceMatrix = [
+        [1, 1, 0, 0, 0, 0],
+        [-1, 0, 1, 0, -1, 0],
+        [0, -1, -1, 1, 0, 0],
+        [0, 0, 0, -1, 1, 1],
+        [0, 0, 0, 0, 0, -1],
+    ];
+    let htmlInterface = new Interface();
+    let solver = new Solver();
+    // solver.start();
+    solver.input(adjacencyMatrix, incidenceMatrix);
+
+    interface_.start();
+    interface_.addButtonListeners();
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Лаб 2</title>
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx"
+            crossorigin="anonymous"
+    />
+    <style>
+        body {
+            margin: 20px;
+        }
+
+        canvas,
+        #div,
+        #div2 {
+            border: 1px solid black;
+            margin: 10px 0;
+        }
+
+        #div {
+            height: 500px;
+        }
+
+        span {
+            word-wrap: break-word;
+        }
+
+        .table-with-borders tr:not(:last-of-type) {
+            border-bottom: 1px solid #999;
+        }
+
+        .table-with-borders th,
+        .table-with-borders td {
+            text-align: center;
+        }
+
+        .table-with-borders th:not(:last-of-type),
+        .table-with-borders tr:last-child td,
+        .table-with-borders tr:last-child th {
+            border: none;
+            border-right: 1px solid #999;
+        }
+
+        .table-with-borders td:not(:last-of-type) {
+            border: 1px solid #aaa;
+            border-radius: 1px;
+        }
+
+        .table-with-borders2 td,
+        .table-with-borders2 th {
+            border: 1px solid #aaa;
+            text-align: center;
+        }
+
+        .table-with-borders2 th:first-child {
+            border-left: none;
+        }
+
+        .table-with-borders2 tr:first-child th {
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+<div class="row">
+    <div class="col-6">
+        <!-- <canvas height="500" width="500" id="canvas">Обновите браузер</canvas> -->
+        <div id="div"></div>
+        <button type="button" class="btn btn-primary" id="clear_btn">Очистить</button>
+        <button type="button" class="btn btn-primary" id="drawVertices_btn">Нарисовать графы</button>
+        <button type="button" class="btn btn-primary" id="output">Решить</button>
+        <button type="button" class="btn btn-primary" id="inputFromAlert">Ввод текстом</button>
+        <div class="col-12 my-1">
+            <p>
+                Количество вершин
+                <input type="number" name="verticesCount" id="verticesCount" min="0" max="20"/>
+            </p>
+            <div class="accordion" id="accordionExample">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                            Заполните матрицу смежности
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
+                         data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                            <div class="d-flex flex-row align-items-center g-5 flex-wrap">
+                                <div class="adjacencyMatrix" id="adjacencyMatrix__inputs"></div>
+                                <span class="adjacencyMatrixOut mx-3" data-description="Мб удалить потом"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Заполните матрицу инцидентности
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
+                         data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                            <div class="adjacencyMatrix" id="incidenceMatrix__inputs"></div>
+                            <span class="incidenceMatrixOut mx-3" data-description="Мб удалить потом"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- <textarea name="adjacencyMatrix" id="adjacencyMatrix__textarea" cols="7" rows="1"></textarea> -->
+        </div>
+
+    </div>
+    <div class="col-6">
+        <div class="row">
+            <p class="out"></p>
+            <div class="col-5">
+                <div class="row">
+                    <div class="col-12 out1"></div>
+                </div>
+            </div>
+            <div class="col-7">
+                <div class="row">
+                    <div class="out2"></div>
+                </div>
+            </div>
+            <!--            <div class="col-6">-->
+            <!--                <div class="row">-->
+            <!--                    <span class="out3 col-12"></span>-->
+            <!--                    <span class="out3-3 col-6"></span>-->
+            <!--                </div>-->
+            <!--            </div>-->
+        </div>
+    </div>
+</div>
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
+        crossorigin="anonymous"
+></script>
+
+<script
+        src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"
+        integrity="sha512-tBzZQxySO5q5lqwLWfu8Q+o4VkTcRGOeQGVQ0ueJga4A1RKuzmAu5HXDOXLEjpbKyV7ow9ympVoa6wZLEzRzDg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+></script>
+<script
+        src="https://cdnjs.cloudflare.com/ajax/libs/graphdracula/1.3.0/dracula.min.js"
+        integrity="sha512-PJ4xeJ2YfC5ybVI5D5M0J2hg/389ejssyl16qhZZh3X0oUdgYPqcYAh6++qncqiyQiqyGf98OynvTkeZyxweeg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+></script>
+<script src="index.js" type="module"></script>
+</body>
+</html>
